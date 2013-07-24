@@ -66,7 +66,6 @@ class Node(object):
             actions_path_list = self.parent_actions_path_list[:]
             actions_path_list.append(action)
             worldstatecopy = deepcopy(self.worldstate)
-            worldstatecopy.apply_effects(action)
             action.apply_preconditions(worldstatecopy)
             node = Node(worldstatecopy, nodes_path_list, actions_path_list) # copy worldstate
             nodes.append(node)
@@ -102,7 +101,7 @@ class Planner(object):
         count = 0
         while len(child_nodes) != 0:
             count += 1
-            if count >= 10:
+            if count >= 20:
                 break
 
             print "=Doing another planning loop="

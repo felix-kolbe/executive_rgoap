@@ -29,41 +29,33 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import unittest
+import roslib; roslib.load_manifest('goap')
+import rospy
 
-from goap.goap import Condition
+from std_msgs.msg import Empty
 
-
-class ConditionTest(unittest.TestCase):
-
-
-    def setUp(self):
-        self.condition1 = Condition()
-        self.condition2 = Condition()
-        Condition._conditions_dict = {}
+from goap import Action, Condition, Precondition, Effect
 
 
-    def tearDown(self):
-        pass
+class ResetBumperAction(Action):
+
+    def __init__(self):
+        Action.__init__(self, [Precondition(Condition.get('robot.bumpered'), True)],
+                            [Effect(Condition.get('robot.bumpered'), False)])
+
+    def run(self):
+        rospy.Publisher('/bumper_reset', Empty).publish()
 
 
-    def testAdd(self):
-        self.assertIs(Condition.add('name1', self.condition1), None, 'Could not add new condition')
-        self.assertIs(Condition.add('name2', self.condition2), None, 'Could not add another new condition')
+class ROSTopicCondition(Condition):
 
-    def testAddSame(self):
-        self.assertIs(Condition.add('name1', self.condition1), None, 'Could not add new condition')
-#         self.assertRaises(AssertionError, Condition.add, 'name2', self.condition1) #'Could not add another new condition')
+    def __init__(self, topic, field, state_name):
+        Condition.__init__(self, state_name)
+        self._topic = topic
+        self._field = field
 
-    def testGet(self):
-        self.assertRaises(AssertionError, Condition.get, 'name_inexistent') # 'Does not fail on getting inexistent condition')
+    def __repr__(self):
+        return '<ROSTopicCondition: topic=%s field=%s>' % self._topic, self._field
 
-    def testGetSame(self):
-        self.assertIs(Condition.add('name', self.condition1), None, 'Could not add new condition')
-        self.assertIs(Condition.get('name'), self.condition1, 'Could not get that same condition')
-
-
-
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()
+    def get_value(self, worldstate):
+        return NaN
