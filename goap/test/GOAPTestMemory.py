@@ -32,6 +32,7 @@
 import unittest
 
 from goap.goap import *
+from goap.inheriting import *
 from goap.planning import Planner
 
 

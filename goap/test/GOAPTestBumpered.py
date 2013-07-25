@@ -32,6 +32,8 @@
 import unittest
 
 from goap.goap import *
+from goap.inheriting import *
+from goap.common_ros import *
 
 
 class Test(unittest.TestCase):
