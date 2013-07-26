@@ -41,7 +41,7 @@ class TestSimple(unittest.TestCase):
 
     def setUp(self):
         self.memory = Memory()
-        self.worldstate = WorldState(self.memory)
+        self.worldstate = WorldState()
 
         self.memory.set_value('memory.counter', 0)
 
@@ -49,15 +49,17 @@ class TestSimple(unittest.TestCase):
 
         Condition._conditions_dict.clear()
 
-        Condition.add('memory.counter', MemoryCondition('counter', self.worldstate))
+        Condition.add('memory.counter', MemoryCondition(self.memory, 'counter'))
+
+        Condition.initialize_worldstate(self.worldstate)
 
         print Condition.print_dict()
 
         self.actionbag = ActionBag()
-        self.actionbag.add(MemoryChangeVarAction('counter', 2, 3))
-        self.actionbag.add(MemoryChangeVarAction('counter', 0, 1))
-        self.actionbag.add(MemoryChangeVarAction('counter', 1, 2))
-        self.actionbag.add(MemoryChangeVarAction('counter', -2, 3))
+        self.actionbag.add(MemoryChangeVarAction(self.memory, 'counter', 2, 3))
+        self.actionbag.add(MemoryChangeVarAction(self.memory, 'counter', 0, 1))
+        self.actionbag.add(MemoryChangeVarAction(self.memory, 'counter', 1, 2))
+        self.actionbag.add(MemoryChangeVarAction(self.memory, 'counter', -2, 3))
 
         print self.actionbag
 
@@ -97,7 +99,7 @@ class TestIncrementer(unittest.TestCase):
 
     def setUp(self):
         self.memory = Memory()
-        self.worldstate = WorldState(self.memory)
+        self.worldstate = WorldState()
 
         self.memory.set_value('memory.counter', 0)
 
@@ -105,10 +107,12 @@ class TestIncrementer(unittest.TestCase):
 
         Condition._conditions_dict.clear()
 
-        Condition.add('memory.counter', MemoryCondition('counter', self.worldstate))
+        Condition.add('memory.counter', MemoryCondition(self.memory, 'counter'))
+
+        Condition.initialize_worldstate(self.worldstate)
 
         self.actionbag = ActionBag()
-        self.actionbag.add(MemoryIncrementerAction('counter'))
+        self.actionbag.add(MemoryIncrementerAction(self.memory, 'counter'))
 
         print Condition.print_dict()
 
@@ -133,6 +137,14 @@ class TestIncrementer(unittest.TestCase):
         self.assertIsNotNone(plan, 'There should be a plan')
         self.assertEqual(len(plan), 3, 'Plan should have three actions')
 
+
+    def testPlannerPosUnneededCondition(self):
+        Condition.add('memory.unneeded', MemoryCondition(self.memory, 'unneeded'))
+        Condition.initialize_worldstate(self.worldstate)
+        print 'reinitialized worldstate with unneeded condition: ', self.worldstate
+        self.testPlannerPos()
+
+
     def testPlannerNeg(self):
         print '==', self.testPlannerNeg.__name__
         planner = Planner(self.actionbag, self.worldstate, self.goal_inaccessible)
@@ -141,8 +153,11 @@ class TestIncrementer(unittest.TestCase):
         self.assertIsNone(plan, 'There should be no plan')
 
     def testPlannerNegPos(self):
+        """Atm this happens to fail easily as the planner randomly follows up and downs
+        action benefits needed..
+        """
         print '==', self.testPlannerPos.__name__
-        self.actionbag.add(MemoryIncrementerAction('counter', -4))
+        self.actionbag.add(MemoryIncrementerAction(self.memory, 'counter', -4))
         planner = Planner(self.actionbag, self.worldstate, self.goal_inaccessible)
         plan = planner.plan()
         print 'plan found: ', plan
