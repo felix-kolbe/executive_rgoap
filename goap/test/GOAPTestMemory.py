@@ -49,7 +49,7 @@ class TestSimple(unittest.TestCase):
 
         Condition._conditions_dict.clear()
 
-        Condition.add('memory.counter', MemoryCondition(self.memory, 'counter'))
+        Condition.add(MemoryCondition(self.memory, 'counter'))
 
         Condition.initialize_worldstate(self.worldstate)
 
@@ -112,7 +112,7 @@ class TestIncrementer(unittest.TestCase):
 
         Condition._conditions_dict.clear()
 
-        Condition.add('memory.counter', MemoryCondition(self.memory, 'counter'))
+        Condition.add(MemoryCondition(self.memory, 'counter'))
 
         Condition.initialize_worldstate(self.worldstate)
 
@@ -145,7 +145,7 @@ class TestIncrementer(unittest.TestCase):
 
 
     def testPlannerPosUnneededCondition(self):
-        Condition.add('memory.unneeded', MemoryCondition(self.memory, 'unneeded'))
+        Condition.add(MemoryCondition(self.memory, 'unneeded'))
         Condition.initialize_worldstate(self.worldstate)
         print 'reinitialized worldstate with unneeded condition: ', self.worldstate
         self.testPlannerPos()
