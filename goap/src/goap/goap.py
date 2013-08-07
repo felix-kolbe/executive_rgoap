@@ -43,6 +43,9 @@ class WorldState(object):
         if worldstate is not None:
             self._condition_values.update(worldstate._condition_values)
 
+    def __str__(self):
+        return '%s %s' % (self.__class__.__name__, self._condition_values)
+
     def __repr__(self):
         return '<WorldState %X values=%s>' % (id(self), self._condition_values)
 
@@ -95,7 +98,10 @@ class Condition(object):
         self._state_name = state_name
 
     def __str__(self):
-        return "Condition:%s" % self._state_name
+        return '%s:%s' % (self.__class__.__name__, self._state_name)
+
+    def __repr__(self):
+        return '<%s name=%s>' % (self.__class__.__name__, self._state_name)
 
     def get_value(self):
         """Returns the current value, hopefully not blocking."""
@@ -139,8 +145,11 @@ class Precondition(object):
         self._value = value
         self._deviation = deviation
 
+    def __str__(self):
+        return '%s:%s=%s~%s' % (self.__class__.__name__, self._condition._state_name, self._value, self._deviation)
+
     def __repr__(self):
-        return '<Precondition cond=%s value=%s dev=%s>' % (self._condition, self._value, self._deviation)
+        return '<%s cond=%s value=%r dev=%s>' % (self.__class__.__name__, self._condition, self._value, self._deviation)
 
     def is_valid(self, worldstate):
         cond_value = worldstate.get_condition_value(self._condition)
@@ -163,6 +172,12 @@ class Effect(object):
         self._condition = condition
         self._new_value = new_value
 
+    def __str__(self):
+        return '%s:%s=%s' % (self.__class__.__name__, self._condition._state_name, self._new_value)
+
+    def __repr__(self):
+        return '<%s cond=%s new_val=%s>' % (self.__class__.__name__, self._condition, self._new_value)
+
     def apply_to(self, worldstate):
         # TODO: remove me as I'm only for forward planning?
         worldstate.set_condition_value(self._condition, self._new_value)
@@ -177,6 +192,12 @@ class VariableEffect(object):
     def __init__(self, condition):
 #        Effect.__init__(self, condition, None)
         self._condition = condition
+
+    def __str__(self):
+        return '%s:%s' % (self.__class__.__name__, self._condition._state_name)
+
+    def __repr__(self):
+        return '<%s cond=%s>' % (self.__class__.__name__, self._condition)
 
 #     def apply_to(self, worldstate):
 #         worldstate.memory.set_value(self._condition, self._new_value)
@@ -214,8 +235,12 @@ class Action(object):
         self._preconditions = preconditions
         self._effects = effects
 
+
+    def __str__(self):
+        return self.__class__.__name__
+
     def __repr__(self):
-        return '<Action type=%s>' % self.__class__.__name__
+        return '<%s preconditions=%s effects=%s>' % (self.__class__.__name__, self._preconditions, self._effects)
 
     def cost(self):
         return 1
