@@ -34,7 +34,6 @@ import unittest
 from goap.goap import *
 from goap.inheriting import *
 from goap.planning import Planner, Node, PlanExecutor
-from goap.introspection import GOAPIntrospection
 from goap.runner import Runner
 
 
@@ -80,7 +79,7 @@ class TestSimple(unittest.TestCase):
 
     def testPlannerPos(self):
         print '==', self.testPlannerPos.__name__
-        start_node = self.runner.update_and_plan(self.goal)
+        start_node = self.runner.update_and_plan(self.goal, introspection=True)
         print 'start_node found: ', start_node
         self.assertIsNotNone(start_node, 'There should be a plan')
         self.assertIsInstance(start_node, Node, 'Plan should be a Node')
@@ -90,9 +89,7 @@ class TestSimple(unittest.TestCase):
         PlanExecutor().execute(start_node)
 
         import rospy
-        rospy.init_node('goaptestmemory')
-        GOAPIntrospection().publish(start_node)
-        rospy.sleep(25)
+        rospy.sleep(25) # to latch introspection # TODO: check why spinner does not work [while in unittest]
 
 
     def testPlannerNeg(self):
@@ -171,14 +168,16 @@ class TestIncrementer(unittest.TestCase):
         """Atm this happens to fail easily as the planner randomly follows up and down actions.
         action benefits needed..
         """
-        print '==', self.testPlannerPos.__name__
+        print '==', self.testPlannerNegPos.__name__
         self.actionbag.add(MemoryIncrementerAction(self.memory, 'counter', -4))
-        start_node = self.runner.update_and_plan(self.goal_inaccessible)
+        start_node = self.runner.update_and_plan(self.goal_inaccessible, introspection=True)
         print 'start_node found: ', start_node
         self.assertIsNotNone(start_node, 'There should be a plan')
         self.assertIsInstance(start_node, Node, 'Plan should be a Node')
         self.assertEqual(len(start_node.parent_actions_path_list), 3, 'Plan should have three actions')
 
+        import rospy
+        rospy.sleep(25) # to latch introspection # TODO: check why spinner does not work [while in unittest]
 
     def tearDown(self):
         print 'memory was:', self.memory
