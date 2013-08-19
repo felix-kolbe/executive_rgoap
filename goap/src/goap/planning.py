@@ -98,7 +98,7 @@ class Planner(object):
 
         self.last_goal_node = None
 
-    def plan(self, goal=None):
+    def plan(self, start_worldstate=None, goal=None):
         """Plan ...
         Return the node that matches the given start WorldState and
         is the start node for a plan reaching the given Goal.
@@ -106,11 +106,12 @@ class Planner(object):
         If any parameter is not given the data given at initialisation is used.
         """
 
+        if start_worldstate is not None:
+            self._start_worldstate = start_worldstate
         if goal is not None:
             self._goal = goal
 
         print 'start_worldstate: ', self._start_worldstate
-
         print 'goal: ', self._goal
 
         goal_worldstate = WorldState()
@@ -122,15 +123,12 @@ class Planner(object):
         print 'goal_node: ', goal_node
         self.last_goal_node = goal_node
 
-#         worldstate = self._start_worldstate
-
         child_nodes = deque([goal_node])
 
-#         while not self._goal.is_valid(worldstate):
         loopcount = 0
         while len(child_nodes) != 0:
             loopcount += 1
-            if loopcount > 2000: # loop limit
+            if loopcount > 500: # loop limit
                 print "Warning: planner stops because loop limit (%s) hit!" % (loopcount - 1)
                 break
 
@@ -149,7 +147,6 @@ class Planner(object):
                 print 'plan actions: ', current_node.parent_actions_path_list
                 return current_node
 
-            #current_node.check_and_add_actions(self._actionbag)
             print "Current node: ", current_node
 
             new_child_nodes = current_node.get_child_nodes_for_valid_actions(
