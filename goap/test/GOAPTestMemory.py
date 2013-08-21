@@ -52,15 +52,15 @@ class TestSimple(unittest.TestCase):
 
         Condition._conditions_dict.clear() # start every test without previous conditions
 
-        Condition.add(MemoryCondition(self.memory, 'counter'))
+        Condition.add(MemoryCondition(self.memory, 'memory.counter'))
 
         print Condition.print_dict()
 
         self.actionbag = self.runner.actionbag
-        self.actionbag.add(MemoryChangeVarAction(self.memory, 'counter', 2, 3))
-        self.actionbag.add(MemoryChangeVarAction(self.memory, 'counter', 0, 1))
-        self.actionbag.add(MemoryChangeVarAction(self.memory, 'counter', 1, 2))
-        self.actionbag.add(MemoryChangeVarAction(self.memory, 'counter', -2, 3))
+        self.actionbag.add(MemoryChangeVarAction(self.memory, 'memory.counter', 2, 3))
+        self.actionbag.add(MemoryChangeVarAction(self.memory, 'memory.counter', 0, 1))
+        self.actionbag.add(MemoryChangeVarAction(self.memory, 'memory.counter', 1, 2))
+        self.actionbag.add(MemoryChangeVarAction(self.memory, 'memory.counter', -2, 3))
 
         print self.actionbag
 
@@ -118,12 +118,12 @@ class TestIncrementer(unittest.TestCase):
 
         Condition._conditions_dict.clear() # start every test without previous conditions
 
-        Condition.add(MemoryCondition(self.memory, 'counter'))
+        Condition.add(MemoryCondition(self.memory, 'memory.counter'))
 
         Condition.initialize_worldstate(self.worldstate)
 
         self.actionbag = self.runner.actionbag
-        self.actionbag.add(MemoryIncrementerAction(self.memory, 'counter'))
+        self.actionbag.add(MemoryIncrementerAction(self.memory, 'memory.counter'))
 
         print Condition.print_dict()
 
@@ -152,7 +152,7 @@ class TestIncrementer(unittest.TestCase):
 
 
     def testPlannerPosUnneededCondition(self):
-        Condition.add(MemoryCondition(self.memory, 'unneeded'))
+        Condition.add(MemoryCondition(self.memory, 'memory.unneeded'))
         Condition.initialize_worldstate(self.worldstate)
         print 'reinitialized worldstate with unneeded condition: ', self.worldstate
         self.testPlannerPos()
@@ -166,7 +166,7 @@ class TestIncrementer(unittest.TestCase):
 
     def testPlannerNegPos(self):
         print '==', self.testPlannerNegPos.__name__
-        self.actionbag.add(MemoryIncrementerAction(self.memory, 'counter', -4))
+        self.actionbag.add(MemoryIncrementerAction(self.memory, 'memory.counter', -4))
         start_node = self.runner.update_and_plan(self.goal_inaccessible, introspection=True)
         print 'start_node found: ', start_node
         self.assertIsNotNone(start_node, 'There should be a plan')
@@ -190,9 +190,9 @@ class TestIncrementer(unittest.TestCase):
 
     def testPlannerBig(self):
         print '==', self.testPlannerBig.__name__
-        self.actionbag.add(MemoryIncrementerAction(self.memory, 'counter', -4))
-        self.actionbag.add(MemoryIncrementerAction(self.memory, 'counter', 11))
-        self.actionbag.add(MemoryIncrementerAction(self.memory, 'counter', 3))
+        self.actionbag.add(MemoryIncrementerAction(self.memory, 'memory.counter', -4))
+        self.actionbag.add(MemoryIncrementerAction(self.memory, 'memory.counter', 11))
+        self.actionbag.add(MemoryIncrementerAction(self.memory, 'memory.counter', 3))
         goal_big = Goal([Precondition(Condition.get('memory.counter'), 23)])
         start_node = self.runner.update_and_plan(goal_big, introspection=True)
         print 'start_node found: ', start_node
