@@ -29,11 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from numpy.core.numeric import NaN
-
-
-
-
 
 class WorldState(object):
     """Storage for values of conditions."""

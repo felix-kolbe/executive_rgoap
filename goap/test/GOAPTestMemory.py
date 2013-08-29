@@ -31,7 +31,7 @@
 
 import unittest
 
-from goap.goap import *
+from goap.common import *
 from goap.inheriting import *
 from goap.planning import Planner, Node, PlanExecutor
 from goap.runner import Runner
