@@ -30,6 +30,7 @@
 
 
 import unittest
+from unittest.case import SkipTest
 
 import rospy
 
@@ -37,7 +38,7 @@ from goap.common import Condition, Precondition, Goal
 from goap.runner import Runner
 from goap.inheriting import MemoryCondition
 
-from goap.smach_bridge import LookAroundAction
+from goap.smach_bridge import LookAroundAction, MoveBaseStateAction
 
 from goap import config_scitos
 
@@ -64,6 +65,11 @@ class Test(unittest.TestCase):
     def tearDown(self):
         pass
 
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    @SkipTest
     def testName(self):
         goal = Goal([Precondition(Condition.get('awareness'), 2)])
 
@@ -71,6 +77,14 @@ class Test(unittest.TestCase):
 
         rospy.sleep(15) # to latch introspection # TODO: check why spinner does not work [while in unittest]
 
+
+    def testStateAction(self):
+        Condition.add(MemoryCondition(self.runner.memory, 'robot.pose'))
+        Condition.add(MemoryCondition(self.runner.memory, 'robot.bumpered'))
+
+        stateaction = MoveBaseStateAction()
+
+        print stateaction
 
 
 

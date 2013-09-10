@@ -43,6 +43,7 @@ from goap.inheriting import *
 from goap.common_ros import *
 from goap.planning import Planner, PlanExecutor
 from goap.runner import Runner
+from goap.smach_bridge import MoveBaseStateAction
 
 
 class Test(unittest.TestCase):
@@ -84,7 +85,8 @@ if __name__ == "__main__":
     print 'worldstate now is: ', runner.worldstate
 
     runner.actionbag.add(ResetBumperAction())
-    runner.actionbag.add(MoveBaseAction())
+#    runner.actionbag.add(MoveBaseAction())
+    runner.actionbag.add(MoveBaseStateAction())
     runner.actionbag.add(MemoryChangeVarAction(runner.memory, 'memory.reminded_myself', 333, 555))
 
 
