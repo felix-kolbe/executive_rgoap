@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from common import *
+from common import Condition, Precondition, Effect, VariableEffect, Action
 
 
 class Memory(object):
