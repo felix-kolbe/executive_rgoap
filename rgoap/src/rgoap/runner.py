@@ -45,7 +45,7 @@ from common import ActionBag, Condition, WorldState, stringify, stringify_dict
 from inheriting import Memory
 from planning import Planner, PlanExecutor
 from introspection import Introspector
-from smach_bridge import SMACHStateWrapperAction, GOAPNodeWrapperState
+from smach_bridge import SMACHStateWrapperAction, RGOAPNodeWrapperState
 from collections import OrderedDict
 
 
@@ -91,7 +91,7 @@ class Runner(object):
     def _setup_introspection(self):
         # init what could have been initialized externally
         if not rospy.core.is_initialized():
-            rospy.init_node('goap_runner_introspector')
+            rospy.init_node('rgoap_runner_introspector')
         # init everything else but only once
         if self._introspector is None:
             self._introspector = Introspector()
@@ -129,7 +129,7 @@ class Runner(object):
     def plan(self, goal, tries=1, introspection=False):
         """plan for given goal and return start_node of plan or None
 
-        introspection: introspect GOAP planning via smach.introspection
+        introspection: introspect RGOAP planning via smach.introspection
         """
         # check for any still uninitialised condition
         for (condition, value) in self.worldstate._condition_values.iteritems():
@@ -263,7 +263,7 @@ class Runner(object):
     def update_and_plan_and_execute(self, goal, tries=1, introspection=False):
         """loop that updates, plans and executes until the goal is reached
 
-        introspection: introspect GOAP planning and SMACH execution via
+        introspection: introspect RGOAP planning and SMACH execution via
                 smach.introspection, defaults to False
         """
         outcome = None
@@ -277,7 +277,7 @@ class Runner(object):
 
             if start_node is None:
                 # TODO: maybe at this point update and replan? reality might have changed
-                rospy.logerr("GOAP Runner aborts, no plan found!")
+                rospy.logerr("RGOAP Runner aborts, no plan found!")
                 return 'aborted'
 
             #success = PlanExecutor().execute(start_node)
@@ -287,7 +287,7 @@ class Runner(object):
                 break; # retry
 
             # check failure
-            rospy.logwarn("GOAP Runner execution fails, replanning..")
+            rospy.logwarn("RGOAP Runner execution fails, replanning..")
 
             self._update_worldstate()
             if not goal.is_valid(self.worldstate):
@@ -303,7 +303,7 @@ class Runner(object):
         sm = self._path_to_smach(start_node)
         # TODO: create proxies / userdata info for inner-sm introspection
         self._current_smach = sm
-        outcome = execute_smach_container(sm, introspection, name='/GOAP_GENERATED_SMACH')
+        outcome = execute_smach_container(sm, introspection, name='/RGOAP_GENERATED_SMACH')
         self._current_smach = None
         return outcome
 
@@ -325,7 +325,7 @@ class Runner(object):
                     node.action.translate_worldstate_to_userdata(next_node.worldstate, sm.userdata)
                 else:
                     StateMachine.add_auto('%s_%X' % (node.action.__class__.__name__, id(node)),
-                                          GOAPNodeWrapperState(node),
+                                          RGOAPNodeWrapperState(node),
                                           ['succeeded'])
 
                 node = next_node
@@ -341,8 +341,8 @@ class Runner(object):
 
 
 
-class GOAPRunnerState(State):
-    """Subclass this state to activate the GOAP planner from within a
+class RGOAPRunnerState(State):
+    """Subclass this state to activate the RGOAP planner from within a
     surrounding SMACH state container, e.g. the ActionServerWrapper
     """
     # TODO: maybe make this class a smach.Container and add states dynamically?
@@ -364,18 +364,18 @@ class GOAPRunnerState(State):
                                           self._build_goal.__name__,
                                           self._build_goals.__name__))
 
-        print "Generated GOAP sub state machine returns: %s" % outcome
+        print "Generated RGOAP sub state machine returns: %s" % outcome
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'
         return outcome
 
     def _build_goal(self, userdata):
-        """Build and return a goap.Goal the planner should accomplish"""
+        """Build and return a rgoap.Goal the planner should accomplish"""
         raise NotImplementedError
 
     def _build_goals(self, userdata):
-        """Build and return a goap.Goal list the planner should accomplish"""
+        """Build and return a rgoap.Goal list the planner should accomplish"""
         raise NotImplementedError
 
     def request_preempt(self):

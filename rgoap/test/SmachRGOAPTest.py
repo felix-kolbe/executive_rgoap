@@ -30,37 +30,57 @@
 
 
 import unittest
+from unittest.case import SkipTest
 
-from goap.common import Condition
+import rospy
+
+from rgoap.common import Condition, Precondition, Goal
+from rgoap.runner import Runner
+from rgoap.inheriting import MemoryCondition
+
+from rgoap.smach_bridge import LookAroundAction
+
+from rgoap import config_scitos
 
 
-class ConditionTest(unittest.TestCase):
+class Test(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        rospy.init_node('smach_rgoap_test')
 
     def setUp(self):
-        self.condition1 = Condition('name1')
-        self.condition2 = Condition('name2')
-        Condition._conditions_dict = {}
+        self.runner = Runner() # config_scitos
 
+        memory = self.runner.memory
+        memory.declare_state('awareness', 0)
+        Condition.add(MemoryCondition(memory, 'awareness'))
+        memory.declare_state('arm_can_move', True)
+        Condition.add(MemoryCondition(memory, 'arm_can_move'))
+
+        self.runner.actionbag.add(LookAroundAction())
+
+        print self.runner.actionbag
 
     def tearDown(self):
         pass
 
+    @classmethod
+    def tearDownClass(cls):
+        pass
 
-    def testAdd(self):
-        self.assertIs(Condition.add(self.condition1), None, 'Could not add new condition')
-        self.assertIs(Condition.add(self.condition2), None, 'Could not add another new condition')
+    @SkipTest
+    def testName(self):
+        goal = Goal([Precondition(Condition.get('awareness'), 2)])
 
-    def testAddSame(self):
-        self.assertIs(Condition.add(self.condition1), None, 'Could not add new condition')
-        self.assertRaises(AssertionError, Condition.add, self.condition1) # 'Could not add another new condition')
+        self.runner.update_and_plan_and_execute(goal, introspection=True)
 
-    def testGet(self):
-        self.assertRaises(AssertionError, Condition.get, 'name_inexistent') # 'Does not fail on getting inexistent condition')
+        rospy.sleep(15) # to latch introspection # TODO: check why spinner does not work [while in unittest]
 
-    def testGetSame(self):
-        self.assertIs(Condition.add(self.condition1), None, 'Could not add new condition')
-        self.assertIs(Condition.get('name1'), self.condition1, 'Could not get that same condition')
+
+    def testStateAction(self):
+        Condition.add(MemoryCondition(self.runner.memory, 'robot.pose'))
+        Condition.add(MemoryCondition(self.runner.memory, 'robot.bumpered'))
 
 
 

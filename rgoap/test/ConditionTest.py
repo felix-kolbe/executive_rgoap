@@ -31,55 +31,39 @@
 
 import unittest
 
-import tf
+from rgoap.common import Condition
 
-from geometry_msgs.msg import Pose, Point, Quaternion
 
-from goap.common import *
-from goap.inheriting import *
-from goap.common_ros import *
-from goap.runner import Runner
+class ConditionTest(unittest.TestCase):
 
-import goap.config_scitos as config_scitos
 
-from uashh_smach.platform.move_base import position_tuple_to_pose
+    def setUp(self):
+        self.condition1 = Condition('name1')
+        self.condition2 = Condition('name2')
+        Condition._conditions_dict = {}
+
+
+    def tearDown(self):
+        pass
+
+
+    def testAdd(self):
+        self.assertIs(Condition.add(self.condition1), None, 'Could not add new condition')
+        self.assertIs(Condition.add(self.condition2), None, 'Could not add another new condition')
+
+    def testAddSame(self):
+        self.assertIs(Condition.add(self.condition1), None, 'Could not add new condition')
+        self.assertRaises(AssertionError, Condition.add, self.condition1) # 'Could not add another new condition')
+
+    def testGet(self):
+        self.assertRaises(AssertionError, Condition.get, 'name_inexistent') # 'Does not fail on getting inexistent condition')
+
+    def testGetSame(self):
+        self.assertIs(Condition.add(self.condition1), None, 'Could not add new condition')
+        self.assertIs(Condition.get('name1'), self.condition1, 'Could not get that same condition')
 
 
 
 if __name__ == "__main__":
-
-    rospy.init_node('goap_bumper_test', log_level=rospy.INFO)
-
-    runner = Runner(config_scitos)
-
-    Condition.add(MemoryCondition(runner.memory, 'memory.reminded_myself'))
-
-    runner.memory.set_value('awareness', 0)
-    runner.memory.set_value('arm_can_move', True)
-    runner.memory.set_value('memory.reminded_myself', 333)
-
-    print 'Waiting to let conditions represent reality...'
-    print 'Remember to start topic publishers so conditions make sense instead of None!'
-    rospy.sleep(2)
-    Condition.initialize_worldstate(runner.worldstate)
-    print 'worldstate now is: ', runner.worldstate
-
-    runner.actionbag.add(MemoryChangeVarAction(runner.memory, 'memory.reminded_myself', 333, 555))
-
-
-    goal = Goal([Precondition(Condition.get('robot.pose'), position_tuple_to_pose(1, 0, 0)),
-                 Precondition(Condition.get('memory.reminded_myself'), 555)])
-
-    start_node = runner.update_and_plan(goal, introspection=True)
-
-    print 'start_node: ', start_node
-
-
-    if start_node is None:
-        print 'No plan found! Check your ROS graph!'
-    else:
-        runner.execute_as_smach(start_node, introspection=True)
-
-
-    rospy.sleep(20)
-
+    #import sys;sys.argv = ['', 'Test.testName']
+    unittest.main()

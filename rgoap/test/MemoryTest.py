@@ -31,7 +31,7 @@
 
 import unittest
 
-from goap.inheriting import Memory
+from rgoap.inheriting import Memory
 
 
 class MemoryTest(unittest.TestCase):
