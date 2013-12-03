@@ -31,7 +31,7 @@
 
 import unittest
 
-from rgoap import common_ros
+from rgoap_ros import common_ros
 
 from std_msgs.msg import Bool
 import rospy

@@ -32,25 +32,49 @@
 import unittest
 from unittest.case import SkipTest
 
-import rospy
+import time
 
-from rgoap.common import Condition, Precondition, Goal
-from rgoap.runner import Runner
-from rgoap.inheriting import MemoryCondition
+from smach import Sequence
 
-from rgoap.smach_bridge import LookAroundAction
+from rgoap import Condition, Precondition, VariableEffect, Goal
+from rgoap import MemoryCondition
+from rgoap import Runner
 
-from rgoap import config_scitos
+from rgoap_smach import SMACHStateWrapperAction
+
+
+
+def get_lookaround_smach_mock():
+    sq = Sequence(outcomes=['succeeded', 'aborted', 'preempted'],
+                  connector_outcome='succeeded')
+    return sq
+
+
+class LookAroundAction(SMACHStateWrapperAction):
+
+    def __init__(self):
+        SMACHStateWrapperAction.__init__(self, get_lookaround_smach_mock(),
+                                  [Precondition(Condition.get('arm_can_move'), True)],
+                                  [VariableEffect(Condition.get('awareness'))])
+
+    def _generate_variable_preconditions(self, var_effects, worldstate, start_worldstate):
+        effect = var_effects.pop()  # this action has one variable effect
+        assert effect is self._effects[0]
+        # increase awareness by one
+        precond_value = worldstate.get_condition_value(effect._condition) - 1
+        return [Precondition(effect._condition, precond_value, None)]
+
 
 
 class Test(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        rospy.init_node('smach_rgoap_test')
+        # rospy.init_node('smach_rgoap_test')
+        pass
 
     def setUp(self):
-        self.runner = Runner() # config_scitos
+        self.runner = Runner()
 
         memory = self.runner.memory
         memory.declare_state('awareness', 0)
@@ -75,7 +99,7 @@ class Test(unittest.TestCase):
 
         self.runner.update_and_plan_and_execute(goal, introspection=True)
 
-        rospy.sleep(15) # to latch introspection # TODO: check why spinner does not work [while in unittest]
+        time.sleep(15) # to latch introspection # TODO: check why spinner does not work [while in unittest]
 
 
     def testStateAction(self):

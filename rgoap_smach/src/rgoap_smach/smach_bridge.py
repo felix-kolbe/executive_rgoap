@@ -29,23 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from smach import State, UserData
+from smach import State, StateMachine, UserData
 
-from common import Condition, Precondition, Effect, VariableEffect, Action
-
-from uashh_smach.manipulator.look_around import get_lookaround_smach
-from uashh_smach.manipulator.move_arm import get_move_arm_to_joints_positions_state
-
-
-#from config_scitos import ARM_POSE_FOLDED, ARM_POSE_FLOOR
-# FIXME: remove these duplicate constants!! (cyclic import issue)
-ARM_NAMES = ['DH_1_2', 'DH_2_3', 'DH_4_4', 'DH_4_5', 'DH_5_6']
-
-ARM_POSE_FOLDED = [0, 0.52, 0.52, -1.57, 0]
-ARM_POSE_FOLDED_NAMED = dict(zip(ARM_NAMES, ARM_POSE_FOLDED))
-
-ARM_POSE_FLOOR = [0, 0.96, 0.96, -2.0, -1.57]
-ARM_POSE_FLOOR_NAMED = dict(zip(ARM_NAMES, ARM_POSE_FLOOR))
+from rgoap import Action
 
 
 
@@ -101,45 +87,77 @@ class SMACHStateWrapperAction(Action):
 
 
 
+class RGOAPRunnerState(State):
+    """Subclass this state to activate the RGOAP planner from within a
+    surrounding SMACH state container, e.g. the ActionServerWrapper
+    """
+    # TODO: maybe make this class a smach.Container and add states dynamically?
+    def __init__(self, runner, **kwargs):
+        State.__init__(self, ['succeeded', 'aborted', 'preempted'], **kwargs)
+        self.runner = runner
 
-class LookAroundAction(SMACHStateWrapperAction):
-
-    def __init__(self):
-        SMACHStateWrapperAction.__init__(self, get_lookaround_smach(glimpse=True),
-                                  [Precondition(Condition.get('arm_can_move'), True)],
-                                  [VariableEffect(Condition.get('awareness'))])
-
-    def _generate_variable_preconditions(self, var_effects, worldstate, start_worldstate):
-        effect = var_effects.pop()  # this action has one variable effect
-        assert effect is self._effects[0]
-        # increase awareness by one
-        precond_value = worldstate.get_condition_value(effect._condition) - 1
-        return [Precondition(effect._condition, precond_value, None)]
-
-
-
-
-class FoldArmAction(SMACHStateWrapperAction):
-
-    def __init__(self):
-        SMACHStateWrapperAction.__init__(self, get_move_arm_to_joints_positions_state(ARM_POSE_FOLDED),
-                                  [Precondition(Condition.get('arm_can_move'), True),
-                                   # TODO: maybe remove necessary anti-effect-preconditions
-                                   # the currently available alternative would be to use a
-                                   # variable effect that can reach any value
-                                   Precondition(Condition.get('robot.arm_folded'), False)],
-                                  [Effect(Condition.get('robot.arm_folded'), True)])
+    def execute(self, userdata):
+        try:
+            goal = self._build_goal(userdata)
+        except NotImplementedError:
+            try:
+                goals = self._build_goals(userdata)
+            except NotImplementedError:
+                raise NotImplementedError("Subclass %s neither implements %s nor %s" % (
+                                          self.__class__.__name__,
+                                          self._build_goal.__name__,
+                                          self._build_goals.__name__))
+            # else cases are needed to not catch other NotImplementedErrors
+            else:
+                outcome = self.runner.plan_and_execute_goals(goals)
+        else:
+            outcome = self.runner.update_and_plan_and_execute(goal, introspection=True)
 
 
-class MoveArmFloorAction(SMACHStateWrapperAction):
+        print "Generated RGOAP sub state machine returns: %s" % outcome
+        if self.preempt_requested():
+            self.service_preempt()
+            return 'preempted'
+        return outcome
 
-    def __init__(self):
-        SMACHStateWrapperAction.__init__(self, get_move_arm_to_joints_positions_state(ARM_POSE_FLOOR),
-                                  [Precondition(Condition.get('arm_can_move'), True),
-                                   # TODO: maybe remove necessary anti-effect-preconditions
-                                   # the currently available alternative would be to use a
-                                   # variable effect that can reach any value
-                                   Precondition(Condition.get('robot.arm_pose_floor'), False)],
-                                  [Effect(Condition.get('robot.arm_pose_floor'), True)])
+    def _build_goal(self, userdata):
+        """Build and return a rgoap.Goal the planner should accomplish"""
+        raise NotImplementedError
+
+    def _build_goals(self, userdata):
+        """Build and return a rgoap.Goal list the planner should accomplish"""
+        raise NotImplementedError
+
+    def request_preempt(self):
+        self.runner.request_preempt()
+        State.request_preempt(self)
+
+    def service_preempt(self):
+        self.runner.service_preempt()
+        State.service_preempt(self)
 
 
+
+def rgoap_path_to_smach_container(start_node):
+    sm = StateMachine(outcomes=['succeeded', 'aborted', 'preempted'])
+
+    node = start_node
+    with sm:
+        while not node.is_goal(): # skipping the goal node at the end
+            next_node = node.parent_node()
+
+            if isinstance(node.action, SMACHStateWrapperAction):
+                # TODO: when smach executes SMACHStateWrapperActions, their action.check_freeform_context() is never called!
+                StateMachine.add_auto('%s_%X' % (node.action.__class__.__name__, id(node)),
+                                      node.action.state,
+                                      ['succeeded'],
+                                      remapping=node.action.get_remapping())
+                node.action.translate_worldstate_to_userdata(next_node.worldstate, sm.userdata)
+            else:
+                StateMachine.add_auto('%s_%X' % (node.action.__class__.__name__, id(node)),
+                                      RGOAPNodeWrapperState(node),
+                                      ['succeeded'])
+
+            node = next_node
+
+    return sm

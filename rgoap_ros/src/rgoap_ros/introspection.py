@@ -29,6 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+import roslib; roslib.load_manifest('rgoap_ros')
 import rospy
 import pickle
 

@@ -35,7 +35,7 @@ Regressive A* planner with Node, Planner and PlanExecutor
 
 from collections import deque
 
-from common import WorldState
+from rgoap import WorldState
 
 
 

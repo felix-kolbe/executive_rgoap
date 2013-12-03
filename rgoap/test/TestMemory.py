@@ -32,7 +32,7 @@
 import unittest
 
 from rgoap.common import *
-from rgoap.inheriting import *
+from rgoap.memory import *
 from rgoap.planning import Node
 from rgoap.runner import Runner
 

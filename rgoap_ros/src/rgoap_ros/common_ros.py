@@ -29,57 +29,45 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import unittest
+"""
+ROS specific specializations of rgoap classes
+"""
 
-import tf
 
-from geometry_msgs.msg import Pose, Point, Quaternion
+import roslib; roslib.load_manifest('rgoap_ros')
+import rospy
+import rostopic
 
-from rgoap.common import *
-from rgoap.inheriting import *
-from rgoap.common_ros import *
-from rgoap.runner import Runner
-
-import rgoap.config_scitos as config_scitos
-
-from uashh_smach.platform.move_base import position_tuple_to_pose
+from rgoap import Condition
 
 
 
-if __name__ == "__main__":
+class ROSTopicCondition(Condition):
+    """Mirrors a ROS message field of a topic as its value.
+    Note that this Condition's value remains None until a message is received.
+    """
+    def __init__(self, state_name, topic, topic_class, field=None, msgeval=None):
+        Condition.__init__(self, state_name)
+        self._topic = topic
+        self._field = field
+        self._subscriber = rospy.Subscriber(topic, topic_class, self._callback)
+        if msgeval is None:
+            assert field is not None
+            msgeval = rostopic.msgevalgen(field)
+        self._msgeval = msgeval
 
-    rospy.init_node('rgoap_bumper_test', log_level=rospy.INFO)
+        self._value = None
 
-    runner = Runner(config_scitos)
+    def __repr__(self):
+        return '<%s topic=%s field=%s>' % (self.__class__.__name__, self._topic, self._field)
 
-    Condition.add(MemoryCondition(runner.memory, 'memory.reminded_myself'))
+    def _callback(self, msg):
+        self._value = self._msgeval(msg)
+#        print 'callback with: ', self._value
 
-    runner.memory.set_value('awareness', 0)
-    runner.memory.set_value('arm_can_move', True)
-    runner.memory.set_value('memory.reminded_myself', 333)
-
-    print 'Waiting to let conditions represent reality...'
-    print 'Remember to start topic publishers so conditions make sense instead of None!'
-    rospy.sleep(2)
-    Condition.initialize_worldstate(runner.worldstate)
-    print 'worldstate now is: ', runner.worldstate
-
-    runner.actionbag.add(MemoryChangeVarAction(runner.memory, 'memory.reminded_myself', 333, 555))
-
-
-    goal = Goal([Precondition(Condition.get('robot.pose'), position_tuple_to_pose(1, 0, 0)),
-                 Precondition(Condition.get('memory.reminded_myself'), 555)])
-
-    start_node = runner.update_and_plan(goal, introspection=True)
-
-    print 'start_node: ', start_node
+    def get_value(self):
+        return self._value
 
 
-    if start_node is None:
-        print 'No plan found! Check your ROS graph!'
-    else:
-        runner.execute_as_smach(start_node, introspection=True)
-
-
-    rospy.sleep(20)
+# TODO: create super class ROSTopicAction(Action):
 
