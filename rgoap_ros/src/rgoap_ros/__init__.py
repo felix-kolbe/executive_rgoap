@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from common_ros import ROSTopicCondition
+from common_ros import ROSTopicCondition, ROSTopicAction
 
 from introspection import Introspector
 
