@@ -42,6 +42,9 @@ from memory import Memory
 from planning import Planner, PlanExecutor
 
 
+import logging
+_logger = logging.getLogger('rgoap')
+
 
 
 class Runner(object):
@@ -93,7 +96,7 @@ class Runner(object):
     def _update_worldstate(self):
         """update worldstate to reality"""
         Condition.initialize_worldstate(self.worldstate)
-        print "worldstate initialized/updated to: ", self.worldstate
+        _logger.info("worldstate initialized/updated to: %s", self.worldstate)
 
     def update_and_plan(self, goal, tries=1, introspection=False):
         """update worldstate and call self.plan(...)"""
@@ -106,7 +109,7 @@ class Runner(object):
         # check for any still uninitialised condition
         for (condition, value) in self.worldstate._condition_values.iteritems():
             if value is None:
-                print "Condition still 'None': %s" % condition #logwarn
+                _logger.warn("Condition still 'None': %s", condition)
 
         while tries > 0:
             tries -= 1
@@ -126,8 +129,8 @@ class Runner(object):
         # sort goals
         goals.sort(key=lambda goal: goal.usability, reverse=True)
 
-        print "Available goals:"
-        print stringify(goals, '\n')
+        if _logger.isEnabledFor(logging.INFO):
+            _logger.info("Available goals:\n%s", stringify(goals, '\n'))
 
         # plan until plan for one goal found
         for goal in goals:
@@ -145,16 +148,17 @@ class Runner(object):
 
             # execution
             self._last_goal = goal
-            print "Executing most usable goal: ", goal
-            print "With plan: ", plan
+            _logger.info("Executing most usable goal: %s", goal)
+            _logger.info("With plan: %s", plan)
             outcome = self.execute(plan, introspection=True)
-            print "Most usable goal returned: ", outcome
+            _logger.info("Most usable goal returned: %s", outcome)
             if outcome == 'aborted':
+                _logger.warn("Executed goal return 'aborted', trying next goal")
                 continue # try next goal
 
             return outcome
 
-        print "For no goal a plan could be found!"
+        _logger.error("For no goal a plan could be found!")
         outcome = 'aborted'
 
         return outcome
@@ -173,7 +177,7 @@ class Runner(object):
 
             if start_node is None:
                 # TODO: maybe at this point update and replan? reality might have changed
-                print "RGOAP Runner aborts, no plan found!" #logerr
+                _logger.error("RGOAP Runner aborts, no plan found!")
                 return 'aborted'
 
             outcome = self.execute(start_node, introspection)
@@ -182,13 +186,13 @@ class Runner(object):
                 break # retry
 
             # check failure
-            print "RGOAP Runner execution fails, replanning.." #logwarn
+            _logger.warn("RGOAP Runner execution fails, replanning..")
 
             self._update_worldstate()
             if not goal.is_valid(self.worldstate):
-                print "Goal isn't valid in current worldstate" #logwarn
+                _logger.warn("Goal isn't valid in current worldstate")
             else:
-                print "Though goal is valid in current worldstate, the plan execution failed!?" #logerr
+                _logger.error("Though goal is valid in current worldstate, the plan execution failed!?")
 
         # until we are succeeding or are preempted
         return outcome
@@ -201,6 +205,6 @@ class Runner(object):
     def print_worldstate_loop(self):
         while not rgoap.is_shutdown():
             self._update_worldstate()
-            print self.worldstate
+            _logger.info("%s", self.worldstate)
             sleep(2)
 

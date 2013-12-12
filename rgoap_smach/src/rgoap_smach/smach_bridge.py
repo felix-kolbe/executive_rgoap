@@ -34,6 +34,10 @@ from smach import State, StateMachine, UserData
 from rgoap import Action
 
 
+import logging
+_logger = logging.getLogger('rgoap.smach')
+
+
 
 class RGOAPNodeWrapperState(State):
     """Used (by the runner) to add RGOAP nodes (aka instances of RGOAP actions)
@@ -50,7 +54,8 @@ class RGOAPNodeWrapperState(State):
 #            return 'aborted'
 #        print "Action %s valid to worldstate" % self.node.action
         if not self.node.action.check_freeform_context():
-            print "Action's freeform context isn't valid! Aborting wrapping state for %s", self.node.action
+            _logger.error("Action's freeform context isn't valid! Aborting"
+                          " wrapping state for %s", self.node.action)
             return 'aborted'
         next_node = self.node.parent_node()
         self.node.action.run(next_node.worldstate)
@@ -115,7 +120,7 @@ class RGOAPRunnerState(State):
             outcome = self.runner.update_and_plan_and_execute(goal, introspection=True)
 
 
-        print "Generated RGOAP sub state machine returns: %s" % outcome
+        _logger.info("Generated RGOAP sub state machine returns: %s", outcome)
         if self.preempt_requested():
             self.service_preempt()
             return 'preempted'
