@@ -37,7 +37,7 @@ from time import sleep
 
 import rgoap
 
-from common import ActionBag, Condition, WorldState, stringify, stringify_dict
+from common import Condition, WorldState, stringify, stringify_dict
 from memory import Memory
 from planning import Planner, PlanExecutor
 
@@ -51,7 +51,7 @@ class Runner(object):
     """
     self.memory: memory to be used for conditions and actions
     self.worldstate: the default/start worldstate
-    self.actionbag: the actions this runner uses
+    self.actions: the actions this runner uses
     self.planner: the planner this runner uses
     """
 
@@ -64,15 +64,15 @@ class Runner(object):
         """
         self.memory = Memory()
         self.worldstate = WorldState()
-        self.actionbag = ActionBag()
+        self.actions = set()
 
         if config_module is not None:
             for condition in config_module.get_all_conditions(self.memory):
                 Condition.add(condition)
             for action in config_module.get_all_actions(self.memory):
-                self.actionbag.add(action)
+                self.actions.add(action)
 
-        self.planner = Planner(self.actionbag, self.worldstate, None)
+        self.planner = Planner(self.actions, self.worldstate, None)
 
         self._last_goal = None
         self._preempt_requested = False # preemption mechanism
@@ -80,7 +80,7 @@ class Runner(object):
 
     def __repr__(self):
         return '<%s memory=%s worldstate=%s actions=%s planner=%s>' % (self.__class__.__name__,
-                                self.memory, self.worldstate, self.actionbag, self.planner)
+                                self.memory, self.worldstate, self.actions, self.planner)
 
 
     def request_preempt(self):
