@@ -1,0 +1,11 @@
+<stack>
+  <description brief="executive_rgoap">
+    RGOAP is a robotic task planning system based on the concept of goal oriented action planning
+  </description>
+  <author>Felix Kolbe</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://wiki.rog.org/executive_rgoap</url>
+  <depend stack="ros_comm"/>
+  <depend stack="executive_smach"/>
+</stack>
